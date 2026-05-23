@@ -75,7 +75,10 @@ export default function DoctorsPage() {
     availableToday: avail === 'today' ? 'true' : '',
   });
 
-  const doctors = data?.data || [];
+ const doctors =
+  data?.data?.doctors ||
+  data?.doctors ||
+  [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
