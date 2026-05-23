@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" rx="24" fill="#ffffff"/>
+  <g transform="translate(18, 30) scale(1.4)">
+    <!-- G letter (Google blue) -->
+    <path d="M17.5 20.5c0-1.57-.15-3.09-.38-4.55H9v8.58h4.75c-.2 1.13-.84 2.08-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.01z" fill="#4285F4"/>
+    <path d="M9 23c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86-2.34 0-4.32-1.58-5.03-3.71H.96v2.33A8.999 8.999 0 009 23z" fill="#34A853"/>
+    <path d="M3.96 15.71A5.41 5.41 0 013.68 14c0-.59.1-1.17.28-1.71V9.96H.96A8.999 8.999 0 000 14c0 1.45.35 2.82.96 4.04l3-2.33z" fill="#FBBC05"/>
+    <path d="M9 5.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46 2.89 11.43 2 9 2A8.999 8.999 0 00.96 9.96l3 2.33C4.67 7.16 6.66 5.58 9 5.58z" fill="#EA4335"/>
+    <!-- "Pay" text -->
+    <text x="22" y="18" font-family="Google Sans, Product Sans, Arial, Helvetica, sans-serif" font-weight="500" font-size="14" fill="#5F6368">Pay</text>
+  </g>
+</svg>

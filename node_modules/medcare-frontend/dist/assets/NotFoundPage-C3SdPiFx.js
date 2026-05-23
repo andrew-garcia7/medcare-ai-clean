@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-sZOQjGsq.js";import{S as t}from"./index-D-vUM_VN.js";var n=e();function r(){return(0,n.jsxs)(`div`,{className:`min-h-screen flex flex-col items-center justify-center`,children:[(0,n.jsx)(`h1`,{children:`404`}),(0,n.jsx)(`p`,{children:`Page not found`}),(0,n.jsx)(t,{to:`/`,children:`Go Home`})]})}export{r as default};

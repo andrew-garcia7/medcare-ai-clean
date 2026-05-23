@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" rx="24" fill="#ffffff"/>
+  <g transform="translate(15, 20)">
+    <!-- BHIM text -->
+    <text x="45" y="28" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="28" fill="#00428B" letter-spacing="1">BHIM</text>
+    <!-- UPI colored bars -->
+    <g transform="translate(12, 40)">
+      <!-- Green bar -->
+      <rect x="0" y="0" width="66" height="8" rx="4" fill="#4CAF50"/>
+      <!-- Orange bar -->
+      <rect x="0" y="14" width="66" height="8" rx="4" fill="#FF9800"/>
+    </g>
+    <!-- UPI text -->
+    <text x="45" y="78" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="16" fill="#00428B" letter-spacing="2">UPI</text>
+  </g>
+</svg>
