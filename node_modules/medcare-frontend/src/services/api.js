@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    'https://medcare-ai-clean.onrender.com/api/v1',
 
   withCredentials: true,
 
@@ -10,7 +12,7 @@ const api = axios.create({
   },
 });
 
-// ================= REQUEST INTERCEPTOR =================
+// REQUEST INTERCEPTOR
 api.interceptors.request.use((config) => {
   try {
     const stored = localStorage.getItem('medcare-auth');
@@ -29,7 +31,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ================= RESPONSE INTERCEPTOR =================
+// RESPONSE INTERCEPTOR
 api.interceptors.response.use(
   (response) => response,
 
