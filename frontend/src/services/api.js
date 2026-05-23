@@ -1,13 +1,18 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/v1`,
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    'http://localhost:5001/api/v1',
+
   withCredentials: true,
+
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
+// ================= REQUEST INTERCEPTOR =================
 api.interceptors.request.use((config) => {
   try {
     const stored = localStorage.getItem('medcare-auth');
@@ -26,17 +31,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// ================= RESPONSE INTERCEPTOR =================
 api.interceptors.response.use(
-  (res) => res,
+  (response) => response,
+
   (error) => {
     const message =
       error?.response?.data?.error ||
+      error?.response?.data?.message ||
       error.message ||
       'Something went wrong';
 
+    // Auto logout on unauthorized
     if (error?.response?.status === 401) {
       localStorage.removeItem('medcare-auth');
-      window.location.href = '/login';
+
+      // Prevent infinite redirect loop
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
 
     return Promise.reject(new Error(message));
