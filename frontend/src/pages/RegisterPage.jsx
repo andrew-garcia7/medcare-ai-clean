@@ -69,7 +69,7 @@ export default function RegisterPage() {
   type="button"
   onClick={() => {
     window.location.href =
-      "http://localhost:5001/api/v1/auth/google";
+      `${import.meta.env.VITE_API_URL}/auth/google`;
   }}
   className="w-full flex items-center justify-center gap-3 py-3 mb-3 rounded-lg bg-white text-slate-700 font-medium text-sm hover:bg-slate-50 transition-all shadow-sm"
 >

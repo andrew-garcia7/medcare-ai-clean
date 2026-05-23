@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/api/v1`,
+  baseURL: import.meta.env.VITE_API_URL,
 
   withCredentials: true,
 
@@ -40,11 +40,9 @@ api.interceptors.response.use(
       error.message ||
       'Something went wrong';
 
-    // Auto logout on unauthorized
     if (error?.response?.status === 401) {
       localStorage.removeItem('medcare-auth');
 
-      // Prevent infinite redirect loop
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
