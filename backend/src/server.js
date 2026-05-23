@@ -53,10 +53,7 @@ app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 // CORS
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://medcare-ai-clean-frontend.vercel.app",
-    ],
+    origin: true,
     credentials: true,
   })
 );
