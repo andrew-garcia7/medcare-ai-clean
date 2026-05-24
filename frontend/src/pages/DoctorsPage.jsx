@@ -76,8 +76,7 @@ export default function DoctorsPage() {
   });
 
  const doctors =
-  data?.data?.doctors ||
-  data?.doctors ||
+  data?.data ||
   [];
 
   return (
