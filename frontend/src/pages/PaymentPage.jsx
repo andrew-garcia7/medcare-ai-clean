@@ -1,6 +1,6 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 import { useNotificationStore } from '../store/notificationStore';
@@ -185,6 +185,18 @@ export default function PaymentPage() {
   const [payError, setPayError] = useState('');
   const [cvvFocused, setCvvFocused] = useState(false);
 
+  // Dynamically load Razorpay checkout.js if it wasn't loaded from index.html
+  useEffect(() => {
+    if (window.Razorpay) return;
+    const existing = document.querySelector('script[src*="checkout.razorpay.com"]');
+    if (existing) return;
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onerror = () => console.warn('[MedCare] Razorpay checkout.js failed to load — demo mode will be used');
+    document.head.appendChild(script);
+  }, []);
+
   const doctorName = doctor ? `Dr. ${doctor?.user?.firstName} ${doctor?.user?.lastName}` : 'Doctor';
   const consultFee = Number(fee || doctor?.consultationFee || 500) || 500;
   const cardType = useMemo(() => detectCardType(cardNumber), [cardNumber]);
@@ -193,18 +205,20 @@ export default function PaymentPage() {
     if (method === 'card') {
       const raw = cardNumber.replace(/\s/g, '');
       const cvvLen = cardType === 'amex' ? 4 : 3;
-      return raw.length === 16 && isExpiryValid(expiry) && cvv.length === cvvLen;
+      const expectedLen = cardType === 'amex' ? 15 : 16;
+      return raw.length === expectedLen && isExpiryValid(expiry) && cvv.length === cvvLen;
     }
     if (method === 'upi') return selectedUpiApp !== '' || isValidUpiId(upiId);
     if (method === 'netbanking') return selectedBank !== '';
     return false;
-  }, [method, cardNumber, expiry, cvv, selectedUpiApp, upiId, selectedBank]);
+  }, [method, cardNumber, expiry, cvv, cardType, selectedUpiApp, upiId, selectedBank]);
 
   // Per-field validation errors (only shown after user has started typing)
   const cardErrors = useMemo(() => {
     const raw = cardNumber.replace(/\s/g, '');
     const errors = {};
-    if (raw.length > 0 && raw.length < 16) errors.cardNumber = 'Card number must be 16 digits';
+    const expectedLen = cardType === 'amex' ? 15 : 16;
+    if (raw.length > 0 && raw.length < expectedLen) errors.cardNumber = `Card number must be ${expectedLen} digits`;
     if (expiry.length === 5 && !isExpiryValid(expiry)) {
       const [mm] = expiry.split('/').map(Number);
       if (mm < 1 || mm > 12) errors.expiry = 'Invalid month (01–12)';
@@ -212,9 +226,17 @@ export default function PaymentPage() {
     }
     if (cvv.length > 0 && cvv.length < (cardType === 'amex' ? 4 : 3)) errors.cvv = `CVV must be ${cardType === 'amex' ? 4 : 3} digits`;
     return errors;
-  }, [cardNumber, expiry, cvv]);
+  }, [cardNumber, expiry, cvv, cardType]);
 
-  const formatCard = (v) => v.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim().slice(0, 19);
+  const formatCard = (v) => {
+    const digits = v.replace(/\D/g, '');
+    if (/^3[47]/.test(digits)) {
+      // Amex: 4-6-5 format
+      return digits.slice(0, 15).replace(/^(\d{0,4})(\d{0,6})(\d{0,5})/, (_, a, b, c) =>
+        [a, b, c].filter(Boolean).join(' '));
+    }
+    return digits.replace(/(\d{4})(?=\d)/g, '$1 ').slice(0, 19);
+  };
   const formatExpiry = (v) => {
     const d = v.replace(/\D/g, '').slice(0, 4);
     return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
@@ -274,8 +296,8 @@ export default function PaymentPage() {
 
       const { order, key, gateway } = orderRes.data;
 
-      // ── Razorpay LIVE checkout ──
-      if (gateway === 'razorpay' && window.Razorpay) {
+      // ── Razorpay LIVE checkout (only when backend has real Razorpay keys configured) ──
+      if (window.Razorpay && gateway !== 'demo') {
         setProcessingPhase(2); // Processing transaction
         setShowProcessingOverlay(false); // Hide overlay while Razorpay popup is open
 
@@ -319,6 +341,8 @@ export default function PaymentPage() {
             },
           };
 
+          console.log("OPENING RAZORPAY");
+          console.log("OPTIONS:", options);
           const rzp = new window.Razorpay(options);
           rzp.on('payment.failed', function (response) {
             reject(new Error(response.error?.description || 'Payment failed'));
@@ -958,7 +982,7 @@ export default function PaymentPage() {
                           <div>
                             <label className="text-slate-400 text-[11px] font-medium block mb-1.5">CVV</label>
                             <div className="relative">
-                              <input type="password" value={cvv} onChange={(e) => setCvv(e.target.value.replace(/\D/g, '').slice(0, cardType === 'amex' ? 4 : 3))} onFocus={() => setCvvFocused(true)} onBlur={() => setCvvFocused(false)} placeholder="\u2022\u2022\u2022" maxLength={cardType === 'amex' ? 4 : 3} className={`w-full px-4 py-3 rounded-xl bg-white/[0.04] border ${cardErrors.cvv ? 'border-red-500/50' : 'border-white/[0.1]'} text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-amber-400/50 focus:ring-2 focus:ring-amber-500/10 transition-all duration-300 font-mono`} />
+                              <input type="password" value={cvv} onChange={(e) => setCvv(e.target.value.replace(/\D/g, '').slice(0, cardType === 'amex' ? 4 : 3))} onFocus={() => setCvvFocused(true)} onBlur={() => setCvvFocused(false)} placeholder="•••" maxLength={cardType === 'amex' ? 4 : 3} className={`w-full px-4 py-3 rounded-xl bg-white/[0.04] border ${cardErrors.cvv ? 'border-red-500/50' : 'border-white/[0.1]'} text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-amber-400/50 focus:ring-2 focus:ring-amber-500/10 transition-all duration-300 font-mono`} />
                               <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                               </svg>
@@ -1196,7 +1220,11 @@ export default function PaymentPage() {
 
                       <div>
                         <label className="text-slate-400 text-[11px] font-medium block mb-1.5">Other Banks</label>
-                        <select className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.1] text-slate-400 text-sm focus:outline-none focus:border-amber-400/50 focus:ring-2 focus:ring-amber-500/10 transition-all duration-300 appearance-none cursor-pointer">
+                        <select
+                          value={['bob','canara','union','idbi','yes','indusind'].includes(selectedBank) ? selectedBank : ''}
+                          onChange={(e) => { if (e.target.value) setSelectedBank(e.target.value); }}
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.1] text-slate-400 text-sm focus:outline-none focus:border-amber-400/50 focus:ring-2 focus:ring-amber-500/10 transition-all duration-300 appearance-none cursor-pointer"
+                        >
                           <option value="">Select your bank</option>
                           <option value="bob">Bank of Baroda</option>
                           <option value="canara">Canara Bank</option>
@@ -1254,7 +1282,7 @@ export default function PaymentPage() {
                         ) : (
                           <p className="text-slate-600">Fill in all card details to proceed</p>
                         )}
-                        <p className="text-slate-700">Use test card: 4242 4242 4242 4242 \u00B7 any future expiry \u00B7 any 3-digit CVV</p>
+                        <p className="text-slate-700">Razorpay test card: 4111 1111 1111 1111 · any future expiry · any 3-digit CVV</p>
                       </div>
                     )}
                     {method === 'upi' && <p className="text-slate-600">Select a UPI app or enter a valid UPI ID (e.g. name@bank)</p>}

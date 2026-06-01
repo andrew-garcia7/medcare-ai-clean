@@ -6,12 +6,17 @@ function useBirdSound() {
   const audioRef = useRef(null);
 
   return () => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio("/sounds/bird-tick.mp3");
-      audioRef.current.volume = 0.25;
+    try {
+      if (!audioRef.current) {
+        audioRef.current = new Audio("/sounds/bird-tick.mp3");
+        audioRef.current.volume = 0.25;
+      }
+      audioRef.current.currentTime = 0;
+      // Catch the rejected promise — prevents framer-motion onUpdate infinite loop
+      audioRef.current.play().catch(() => {});
+    } catch {
+      // Audio not supported or file missing — silently skip
     }
-    audioRef.current.currentTime = 0;
-    audioRef.current.play();
   };
 }
 

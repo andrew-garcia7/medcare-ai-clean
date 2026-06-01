@@ -1,7 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
-const { Appointment } = require('../models/Appointment');
+
 const { protect } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
@@ -217,26 +217,33 @@ router.post('/razorpay/create-order', async (req, res) => {
 
     // If Razorpay is configured, create a real order
     if (isRazorpayConfigured && razorpay) {
-      const options = {
-        amount: Math.round(amount * 100), // paise
-        currency: 'INR',
-        receipt: `rcpt_${Date.now().toString().slice(-10)}`,
-        notes: { method: method || 'card', platform: 'medcare' },
-      };
+      try {
+        const options = {
+          amount: Math.round(amount * 100), // paise
+          currency: 'INR',
+          receipt: `rcpt_${Date.now().toString().slice(-10)}`,
+          notes: { method: method || 'card', platform: 'medcare' },
+        };
 
-      const order = await razorpay.orders.create(options);
-      logger.info(`Razorpay order created: ${order.id} | ₹${amount}`);
+        const order = await razorpay.orders.create(options);
+        logger.info(`Razorpay order created: ${order.id} | ₹${amount}`);
 
-      return res.json({
-        success: true,
-        order: {
-          id: order.id,
-          amount: order.amount,
-          currency: order.currency,
-        },
-        key: razorpayKeyId, // public key safe to send to frontend
-        gateway: 'razorpay',
-      });
+        return res.json({
+          success: true,
+          order: {
+            id: order.id,
+            amount: order.amount,
+            currency: order.currency,
+          },
+          key: razorpayKeyId,
+          gateway: 'razorpay',
+        });
+      } catch (razorpayErr) {
+        // Log the full Razorpay error body so we can see the exact API failure reason
+        // (e.g. "401 Unauthorized", "bad_request_error: amount must be >= 100", etc.)
+        const rzpErrBody = razorpayErr?.error || razorpayErr?.response?.data || razorpayErr?.message;
+        logger.warn(`Razorpay create-order failed — falling back to demo. Reason: ${JSON.stringify(rzpErrBody)}`);
+      }
     }
 
     // Demo mode — simulate order creation
@@ -316,6 +323,61 @@ router.get('/razorpay/config', (req, res) => {
     configured: isRazorpayConfigured && !!razorpay,
     key: isRazorpayConfigured ? razorpayKeyId : null,
   });
+});
+
+
+// ================= RAZORPAY: WEBHOOK =================
+// Configure this URL in Razorpay Dashboard → Settings → Webhooks
+// URL: https://<your-domain>/api/v1/payments/razorpay/webhook
+// Events: payment.captured, payment.failed, order.paid
+router.post('/razorpay/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['x-razorpay-signature'];
+  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+
+  // Verify webhook signature when secret is configured
+  if (webhookSecret && signature) {
+    const expectedSig = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(req.body)
+      .digest('hex');
+
+    if (expectedSig !== signature) {
+      logger.warn('Razorpay webhook: signature mismatch — possible forgery attempt');
+      return res.status(400).json({ success: false, error: 'Invalid webhook signature' });
+    }
+  }
+
+  try {
+    const event = JSON.parse(req.body.toString());
+    const eventType = event.event;
+
+    if (eventType === 'payment.captured') {
+      const payment = event.payload?.payment?.entity;
+      if (payment) {
+        logger.info(`Razorpay webhook: payment.captured | ${payment.id} | ₹${(payment.amount / 100).toFixed(2)} | order: ${payment.order_id}`);
+        // Notes set during order creation can carry appointmentId for DB update
+        const appointmentId = payment.notes?.appointmentId;
+        if (appointmentId) {
+          logger.info(`Razorpay webhook: linked to appointmentId ${appointmentId}`);
+        }
+      }
+    } else if (eventType === 'payment.failed') {
+      const payment = event.payload?.payment?.entity;
+      if (payment) {
+        logger.warn(`Razorpay webhook: payment.failed | ${payment.id} | reason: ${payment.error_description}`);
+      }
+    } else if (eventType === 'order.paid') {
+      const order = event.payload?.order?.entity;
+      if (order) {
+        logger.info(`Razorpay webhook: order.paid | ${order.id} | ₹${(order.amount_paid / 100).toFixed(2)}`);
+      }
+    }
+
+    res.json({ received: true });
+  } catch (err) {
+    logger.error(`Razorpay webhook parse error: ${err.message}`);
+    res.status(400).json({ success: false, error: 'Webhook parse error' });
+  }
 });
 
 

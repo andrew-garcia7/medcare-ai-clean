@@ -483,6 +483,17 @@ router.post('/payment/save', (req, res) => {
 
   paymentsStore.set(paymentId, paymentData);
 
+  // Update the appointment payment status so the dashboard reflects paid state
+  if (appointmentId && appointmentsStore.has(appointmentId)) {
+    const apt = appointmentsStore.get(appointmentId);
+    apt.payment.status = 'paid';
+    apt.payment.paidAt = new Date().toISOString();
+    apt.payment.method = method || 'card';
+    apt.payment.paymentId = paymentId;
+    if (apt.status === 'pending') apt.status = 'confirmed';
+    appointmentsStore.set(appointmentId, apt);
+  }
+
   res.json({ success: true, data: paymentData });
 });
 
