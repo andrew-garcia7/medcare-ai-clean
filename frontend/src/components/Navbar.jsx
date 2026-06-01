@@ -415,11 +415,20 @@ ${
                   transition={{ duration: 0.4 }}
                   className="relative w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500 flex items-center justify-center text-[11px] font-bold text-white overflow-hidden ring-2 ring-amber-200/40 group-hover:ring-amber-400/60 shadow-[0_4px_16px_rgba(251,191,36,0.2)] group-hover:shadow-[0_4px_24px_rgba(251,191,36,0.4)] transition-all duration-300"
                 >
-                  {user?.avatar ? (
-                    <img src={typeof user.avatar === 'string' ? user.avatar : user.avatar.url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`
-                  )}
+                  {(() => {
+                    const src = user?.avatar?.url
+                      || (typeof user?.avatar === 'string' ? user.avatar : '');
+                    return src ? (
+                      <img
+                        src={src}
+                        alt={user.firstName}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`
+                    );
+                  })()}
                   <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </motion.div>
                 <span className="text-[12px] font-semibold bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent group-hover:from-yellow-400 group-hover:to-orange-500 max-w-[100px] truncate hidden lg:inline font-sans transition-all duration-300">

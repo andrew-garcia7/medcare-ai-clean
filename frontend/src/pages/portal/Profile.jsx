@@ -55,7 +55,13 @@ export default function Profile() {
     try {
       const { data } = await api.put('/appointments/data/profile', form);
       setProfile(data.data); setEditing(false);
-      updateUser({ firstName: form.firstName, lastName: form.lastName, avatar: form.avatar || null });
+      // Normalise avatar to { url } shape so Navbar can always use avatar.url
+      const avatarOut = !form.avatar
+        ? null
+        : typeof form.avatar === 'string'
+          ? { url: form.avatar }
+          : form.avatar;
+      updateUser({ firstName: form.firstName, lastName: form.lastName, avatar: avatarOut });
       toast.success('Profile updated successfully!');
       addNotification({ type: 'profile', title: 'Profile Updated', message: 'Your personal information and medical details have been saved successfully.' });
     } catch (err) { toast.error(err.message || 'Failed to update profile'); }
@@ -70,7 +76,7 @@ export default function Profile() {
       const base64 = ev.target.result;
       setForm(prev => ({ ...prev, avatar: base64 }));
       // Immediately update auth store so avatar shows everywhere
-      updateUser({ avatar: base64 });
+      updateUser({ avatar: { url: base64 } });
     };
     reader.readAsDataURL(file);
   };
