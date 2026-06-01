@@ -50,6 +50,13 @@ export default function Profile() {
       .catch(() => setLoading(false));
   }, []);
 
+  // Sync form.avatar → Zustand whenever it changes (upload, or on initial load from backend)
+  useEffect(() => {
+    if (!form.avatar) return;
+    const avatarOut = typeof form.avatar === 'string' ? { url: form.avatar } : form.avatar;
+    updateUser({ avatar: avatarOut });
+  }, [form.avatar]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSave = async () => {
     setSaving(true);
     try {
