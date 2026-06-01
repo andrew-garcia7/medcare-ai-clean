@@ -35,7 +35,7 @@ const GoldCard = ({ children, className = '', delay = 0 }) => (
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, updateUser } = useAuthStore();
+  const { user, updateUser, setAvatarUrl } = useAuthStore();
   const { addNotification } = useNotificationStore();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,8 +53,11 @@ export default function Profile() {
   // Sync form.avatar → Zustand whenever it changes (upload, or on initial load from backend)
   useEffect(() => {
     if (!form.avatar) return;
-    const avatarOut = typeof form.avatar === 'string' ? { url: form.avatar } : form.avatar;
-    updateUser({ avatar: avatarOut });
+    const url = typeof form.avatar === 'string' ? form.avatar : (form.avatar?.url || '');
+    if (url) {
+      setAvatarUrl(url);
+      updateUser({ avatar: { url } });
+    }
   }, [form.avatar]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = async () => {
@@ -96,6 +99,7 @@ export default function Profile() {
         const base64 = canvas.toDataURL('image/jpeg', 0.8);
         setForm(prev => ({ ...prev, avatar: base64 }));
         // Immediately update auth store so Navbar shows the photo
+        setAvatarUrl(base64);
         updateUser({ avatar: { url: base64 } });
       };
       img.src = ev.target.result;

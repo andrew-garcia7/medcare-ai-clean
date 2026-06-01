@@ -338,7 +338,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
 
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user, logout, avatarUrl } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -416,7 +416,8 @@ ${
                   className="relative w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500 flex items-center justify-center text-[11px] font-bold text-white overflow-hidden ring-2 ring-amber-200/40 group-hover:ring-amber-400/60 shadow-[0_4px_16px_rgba(251,191,36,0.2)] group-hover:shadow-[0_4px_24px_rgba(251,191,36,0.4)] transition-all duration-300"
                 >
                   {(() => {
-                    const src = user?.avatar?.url
+                    const src = avatarUrl
+                      || user?.avatar?.url
                       || (typeof user?.avatar === 'string' ? user.avatar : '');
                     return src ? (
                       <img

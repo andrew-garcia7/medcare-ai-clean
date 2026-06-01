@@ -10,6 +10,7 @@ export const useAuthStore = create(
       token: null,
       isAuthenticated: false,
       isLoading: false,
+      avatarUrl: '',    // ← dedicated avatar URL, avoids nested user.avatar issues
 
       // 🔐 LOGIN
       login: async (email, password) => {
@@ -73,6 +74,7 @@ export const useAuthStore = create(
           user: null,
           token: null,
           isAuthenticated: false,
+          avatarUrl: '',
         });
       },
 
@@ -84,6 +86,9 @@ export const useAuthStore = create(
             : null,
         }));
       },
+
+      // 🖼️ SET AVATAR URL (dedicated field — bypasses nested user.avatar issues)
+      setAvatarUrl: (url) => set({ avatarUrl: url || '' }),
 
       // ✅ SET AUTH
 setAuth: (status) => {
@@ -128,6 +133,7 @@ setAuth: (status) => {
         token: state.token,
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        avatarUrl: state.avatarUrl,
       }),
     }
   )
