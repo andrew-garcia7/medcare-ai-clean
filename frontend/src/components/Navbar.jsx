@@ -420,10 +420,11 @@ ${
                       || (typeof user?.avatar === 'string' ? user.avatar : '');
                     return src ? (
                       <img
+                        key={src}
                         src={src}
-                        alt={user.firstName}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        alt={user?.firstName}
+                        className="absolute inset-0 w-full h-full object-cover rounded-full"
+                        onError={(e) => { e.currentTarget.remove(); }}
                       />
                     ) : (
                       `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`

@@ -80,10 +80,25 @@ export default function Profile() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const base64 = ev.target.result;
-      setForm(prev => ({ ...prev, avatar: base64 }));
-      // Immediately update auth store so avatar shows everywhere
-      updateUser({ avatar: { url: base64 } });
+      // Resize to 200×200 so the base64 stays small enough for localStorage
+      const img = new window.Image();
+      img.onload = () => {
+        const SIZE = 200;
+        const canvas = document.createElement('canvas');
+        canvas.width = SIZE;
+        canvas.height = SIZE;
+        const ctx = canvas.getContext('2d');
+        // Center-crop to square
+        const min = Math.min(img.naturalWidth, img.naturalHeight);
+        const sx = (img.naturalWidth - min) / 2;
+        const sy = (img.naturalHeight - min) / 2;
+        ctx.drawImage(img, sx, sy, min, min, 0, 0, SIZE, SIZE);
+        const base64 = canvas.toDataURL('image/jpeg', 0.8);
+        setForm(prev => ({ ...prev, avatar: base64 }));
+        // Immediately update auth store so Navbar shows the photo
+        updateUser({ avatar: { url: base64 } });
+      };
+      img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
   };
